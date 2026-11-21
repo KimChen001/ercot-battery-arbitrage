@@ -1,0 +1,24 @@
+Training rows: 17,352   features: 27
+Components for 80% / 90% / 95% of variance: 7 / 10 / 13
+
+PC   var%   cum%   corr with asinh(price)   top loadings
+PC1   42.5   42.5   +0.62                     cooling_deg(+0.27), temp_fc(+0.26), load_d2_max(+0.25), temp_fc_daymax(+0.25)
+PC2   11.3   53.8   +0.56                     price_lag1d(+0.36), price_samehour_7d_mean(+0.36), price_lag2d(+0.34), price_lag7d(+0.31)
+PC3    8.7   62.5   -0.02                     solar_obs_lag2d(+0.43), hour_cos(-0.39), price_d1_mean(-0.32), price_d1_max(-0.31)
+PC4    6.0   68.5   +0.09                     hour_cos(+0.43), solar_obs_lag2d(-0.39), wind_obs_lag2d(-0.37), price_d1_spread(-0.29)
+PC5    4.6   73.1   +0.10                     doy_sin(+0.66), wind_obs_lag2d(+0.36), doy_cos(-0.30), hour_cos(+0.28)
+PC6    4.2   77.3   +0.05                     price_d1_min(+0.44), hour_sin(+0.37), is_weekend(+0.32), is_holiday(-0.29)
+PC7    4.1   81.4   -0.08                     is_weekend(+0.67), is_holiday(-0.46), load_lag2d(+0.24), load_d2_mean(+0.22)
+PC8    3.5   84.9   +0.00                     is_holiday(+0.66), is_weekend(+0.30), heating_deg(+0.25), hour_sin(+0.25)
+PC9    3.2   88.1   -0.05                     is_weekend(+0.52), is_holiday(+0.42), heating_deg(-0.34), wind_obs_lag2d(+0.28)
+PC10   2.7   90.8   +0.02                     wind_obs_lag2d(+0.69), doy_sin(-0.34), price_d1_min(+0.33), solar_obs_d2_mean(-0.24)
+
+Strongest single-feature correlations with asinh(price):
+  price_lag1d              +0.85
+  price_samehour_7d_mean   +0.81
+  price_lag2d              +0.76
+  price_lag7d              +0.72
+  load_lag2d               +0.57
+  price_d1_mean            +0.56
+  load_lag7d               +0.54
+  cooling_deg              +0.53

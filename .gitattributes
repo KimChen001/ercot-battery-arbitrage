@@ -1,0 +1,6 @@
+# Keep data and outputs byte-for-byte as downloaded/generated (no line-ending conversion)
+data/** -text
+results/** -text
+robustness_hb_west/** -text
+*.zip binary
+*.png binary

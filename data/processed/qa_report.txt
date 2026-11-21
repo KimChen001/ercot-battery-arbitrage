@@ -1,0 +1,28 @@
+Rows: 35,064   Price rows: 35,064   Load rows: 35,064
+Range (local): 2022-01-01 00:00:00-06:00 -> 2025-12-31 23:00:00-06:00
+Duplicate UTC hours: 0
+Missing UTC hours in price series: 0
+Hours per local day: {23: 4, 24: 1453, 25: 4}
+  23-hour days: ['2022-03-13', '2023-03-12', '2024-03-10', '2025-03-09']
+  25-hour days: ['2022-11-06', '2023-11-05', '2024-11-03', '2025-11-02']
+Missing values per column:
+  price             0 missing   first value at 2022-01-01 00:00:00-06:00
+  load_ercot        0 missing   first value at 2022-01-01 00:00:00-06:00
+  load_ncent        0 missing   first value at 2022-01-01 00:00:00-06:00
+  temp_fc_d1      499 missing   first value at 2022-01-01 00:00:00-06:00
+  wind_fc_d1   17,964 missing   first value at 2024-01-19 05:00:00-06:00
+  solar_fc_d1  17,964 missing   first value at 2024-01-19 05:00:00-06:00
+  temp_obs          7 missing   first value at 2022-01-01 00:00:00-06:00
+  rh_obs            7 missing   first value at 2022-01-01 00:00:00-06:00
+  wind_obs          7 missing   first value at 2022-01-01 00:00:00-06:00
+  solar_obs         7 missing   first value at 2022-01-01 00:00:00-06:00
+  cloud_obs         7 missing   first value at 2022-01-01 00:00:00-06:00
+Price ($/MWh): count=35,064.00, mean=45.02, std=123.91, min=-4.00, 1%=4.48, 50%=26.10, 99%=319.64, max=4,200.00
+  negative-price hours: 6   hours above $1,000: 92
+  2022: mean   64.61  median  48.18  max  2543.82  negative    0
+  2023: mean   55.50  median  21.48  max  4200.00  negative    0
+  2024: mean   27.06  median  18.58  max  2224.74  negative    6
+  2025: mean   32.94  median  26.77  max   913.72  negative    0
+Daily max-min spread: median 53.40, mean 126.32, max 4,177.00 on 2023-08-25
+ERCOT load (MW): min 31,796  median 49,377  max 85,464
+Corr(price, load_ercot) = 0.268   Corr(price, temp_fc_d1) = 0.177

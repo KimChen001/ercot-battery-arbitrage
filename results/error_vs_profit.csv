@@ -1,0 +1,6 @@
+level,metric,rank_corr_with_regret_%
+day (all models pooled),daily MAE,0.2795630289580725
+day (all models pooled),daily Spearman (hour ranking),-0.6805698693895008
+day (all models pooled),peak + trough hits,-0.521227100839285
+model (6 forecasts),MAE vs capture %,-0.942857142857143
+model (6 forecasts),Spearman vs capture %,0.8857142857142858
