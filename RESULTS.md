@@ -145,7 +145,31 @@ with perfect prices still earns less than naive + MILP. The ranking among ML mod
 change: at the more volatile West hub the LSTM beats LightGBM, so the ensemble is the
 safest choice across markets.
 
-## 10. Key findings
+## 10. Why a validation year? (`results/experiment_no_validation.csv`)
+
+Plan A trains on 2022–2024 with untuned settings (library defaults, or a guessed number
+of LSTM epochs) and goes straight to the 2025 test. Plan B, ours, first holds out 2024 to
+choose the settings, then refits on 2022–2024. Both final models are trained on 2022–2024
+and tested on 2025, so the only difference is where the settings come from.
+
+| Model | Plan | Settings | MAE ($/MWh) | % of perfect foresight |
+| --- | --- | --- | --- | --- |
+| LASSO | A: no validation | Library default penalty (1.0) | 13.37 | 0.0% |
+| LASSO | B: tuned on 2024 | Penalty 0.0001 | 9.39 | 88.1% |
+| LightGBM | A: no validation | Library defaults (31 leaves, 100 trees) | 8.84 | 87.4% |
+| LightGBM | B: tuned on 2024 | 63 leaves, 486 trees | 8.85 | 89.6% |
+| LSTM | A: no validation | Guessed 100 epochs | 11.89 | 87.1% |
+| LSTM | B: tuned on 2024 | 15 epochs (early stopping on 2024) | 10.11 | 86.3% |
+
+Without a validation year, LASSO's default penalty shrinks every coefficient to zero: it
+forecasts the same price for every hour, the MILP sees no spread and never trades. The
+LSTM trained for a guessed 100 epochs overfits (MAE 11.89 vs. 10.11). LightGBM's defaults
+happen to work, but that can only be discovered by looking at the test year, which would
+then no longer be an honest test. Because settings were tuned for MAE rather than profit,
+plan A sometimes earns a little more (the LSTM), another sign that error and profit
+diverge; tuning directly on backtested profit is future work.
+
+## 11. Key findings
 
 1. **Better forecasts earn more, significantly.** LightGBM + MILP earns $283k (+10%) more
    than the naive forecast in 2025 and captures 89.6% of the perfect-foresight profit;
@@ -172,8 +196,10 @@ safest choice across markets.
    observed weather add nothing.
 9. **Renewable forecasts are the next data to add.** Where they exist (2024 onward) they
    raise profit by 1.3 points.
+10. **A validation year is necessary.** Without one, default LASSO settings earn nothing
+    and the LSTM overfits; holding out 2024 also keeps the 2025 test honest.
 
-## 11. Figures (`figures/`)
+## 12. Figures (`figures/`)
 
 | File | What it shows |
 | --- | --- |
@@ -190,7 +216,7 @@ safest choice across markets.
 | `pca_scree.png`, `pca_loadings.png` | PCA of the 27 continuous features |
 | `robustness_hb_west/figures/` | SHAP chart for the HB_WEST LightGBM |
 
-## 12. Caveats
+## 13. Caveats
 
 Day-ahead energy arbitrage at one hub only (no real-time or ancillary-service revenue,
 no grid fees or degradation over time); assumed battery parameters (covered by the

@@ -7,10 +7,12 @@
 3. Renewable forecasts: day-before (48 h) wind and solar forecasts for the West Texas wind
    belt (32.47 N, 100.41 W) exist only from 2024, so two LightGBM models are trained on
    2024 alone - with and without them - and compared on 2025.
+4. No validation: train on 2022-2024 with untuned (library default / guessed) settings and
+   test on 2025, vs. our settings tuned on 2024.
 
 Usage: python -P src/experiments.py <project_root>
-Writes results/experiment_ablation.csv, experiment_pcr.csv, experiment_renewables.csv and
-figures/fig7_ablation.png
+Writes results/experiment_ablation.csv, experiment_pcr.csv, experiment_renewables.csv,
+experiment_no_validation.csv and figures/fig7_ablation.png
 """
 
 import os
@@ -26,17 +28,21 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 from sklearn.decomposition import PCA
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import Lasso, LinearRegression
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
 sys.path.insert(0, os.path.dirname(__file__))
 from battery import Battery, profit, solve_milp  # noqa: E402
 from features import to_day_matrix  # noqa: E402
+from forecast_baselines import design as lasso_design  # noqa: E402
 from forecast_lgbm import FEATURES  # noqa: E402
+import forecast_lstm  # noqa: E402
 from pca_analysis import FEATURES as PCA_FEATURES, PRICE_COLS  # noqa: E402
 
 warnings.filterwarnings("ignore", category=UserWarning)
+# a flat forecast (untuned LASSO) has no hour ranking; its Spearman is reported as NaN
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 GROUPS = {
     "price history": FEATURES[0:9],
     "load": FEATURES[9:13],
@@ -146,6 +152,47 @@ def renewables(root, df, ev):
     return pd.DataFrame(rows)
 
 
+def no_validation(root, df, ev):
+    """Plan A (no tuning year, untuned settings) vs plan B (settings tuned on 2024)."""
+    trva, te = df[df["split"] != "test"], df[df["split"] == "test"]
+    rows = []
+
+    def add(model, plan, setting, pred):
+        r = ev.score(pred)
+        rows.append({"model": model, "plan": plan, "setting": setting, **r})
+        print(f"  {model:9s} {plan:18s} {setting:42s} MAE {r['MAE']:6.2f}  capture {r['capture_%']:5.1f}%")
+
+    for plan, setting, params in (
+            ("A: no validation", "library defaults (31 leaves, 100 trees)",
+             dict(verbose=-1, random_state=0)),
+            ("B: tuned on 2024", "63 leaves, 486 trees", LGB_PARAMS)):
+        m = lgb.LGBMRegressor(**params).fit(trva[FEATURES], trva["price_asinh"])
+        add("LightGBM", plan, setting, np.sinh(m.predict(te[FEATURES])))
+
+    for plan, setting, alpha in (("A: no validation", "library default penalty 1.0", 1.0),
+                                 ("B: tuned on 2024", "penalty 0.0001", 1e-4)):
+        m = make_pipeline(StandardScaler(), Lasso(alpha=alpha, max_iter=20000))
+        m.fit(lasso_design(trva), trva["price_asinh"])
+        add("LASSO", plan, setting, np.sinh(m.predict(lasso_design(te))))
+
+    L = forecast_lstm
+    days, seq, static, y, split = L.build_samples(root)
+    fit, tst = split != "test", split == "test"
+    s_seq = L.Scaler().fit(seq[fit], axis=(0, 1))
+    s_st, s_y = L.Scaler().fit(static[fit], axis=0), L.Scaler().fit(y[fit], axis=0)
+    for plan, setting, epochs in (("A: no validation", "guessed 100 epochs", 100),
+                                  ("B: tuned on 2024", "15 epochs (early stopping on 2024)", 15)):
+        preds = []
+        for seed in L.SEEDS:
+            model, _, _ = L.train(s_seq(seq[fit]), s_st(static[fit]), s_y(y[fit]), seed, epochs)
+            preds.append(s_y.mu + s_y.sd * L.predict(model, s_seq(seq[tst]), s_st(static[tst])))
+        p = np.sinh(np.mean(preds, axis=0))
+        out = pd.DataFrame({"date": np.repeat(pd.to_datetime(days[tst]).strftime("%Y-%m-%d"), 24),
+                            "he": np.tile(np.arange(1, 25), tst.sum()), "pred": p.ravel()})
+        add("LSTM", plan, setting, ev.keys.merge(out, on=["date", "he"], how="left")["pred"].to_numpy())
+    return pd.DataFrame(rows)
+
+
 def plot_ablation(abl, root):
     t = abl.iloc[::-1].reset_index(drop=True)
     full = abl.loc[0, "capture_%"]
@@ -192,6 +239,8 @@ def main(root):
     pcr(df, ev).to_csv(os.path.join(res, "experiment_pcr.csv"), index=False)
     print("3) Renewable forecasts (train 2024, test 2025)")
     renewables(root, df, ev).to_csv(os.path.join(res, "experiment_renewables.csv"), index=False)
+    print("4) No validation year vs settings tuned on 2024")
+    no_validation(root, df, ev).to_csv(os.path.join(res, "experiment_no_validation.csv"), index=False)
 
 
 if __name__ == "__main__":
